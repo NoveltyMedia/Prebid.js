@@ -90,6 +90,9 @@ window.cygnus_index_parse_res = function(response) {
             impBid.dealID = bid.ext.dealid;
           }
           impBid.bid = bid.price;
+          impBid._ext = {
+            _res: bid
+          }
           impBid.slotID = slotID;
           impBid.priceLevel = bid.ext.pricelevel;
           impBid.target = targetPrefix + targetID;
@@ -559,7 +562,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           var adUnitCode = bidObj.placementCode;
 
           var bids = [];
-
+          
           // Grab the bid for current slot
           for (var cpmAndSlotId in indexObj) {
             var match = /^(T\d_)?(.+)_(\d+)$/.exec(cpmAndSlotId);
@@ -571,7 +574,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             var tier = match[1] || '';
             var slotID = match[2];
             var currentCPM = match[3];
-
+            // window['con'+'sole']['log']('wtf is ',indexObj);
             var slotObj = getSlotObj(cygnus_index_args, tier + slotID);
             // Bid is for the current slot
             if (slotID === adSlotId) {
@@ -582,6 +585,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.width = slotObj.width;
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
+              // window['con'+'sole']['log'](cpmAndSlotId, _IndexRequestData.targetIDToResp && _IndexRequestData.targetIDToResp[cpmAndSlotId]);
+              if (typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId]._ext !== 'undefined') {
+                bid._res = _IndexRequestData.targetIDToResp[cpmAndSlotId]._ext._res;
+              }
               if (typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined') {
                 if (typeof _IndexRequestData.targetAggregate['private'][adUnitCode] === 'undefined') { _IndexRequestData.targetAggregate['private'][adUnitCode] = []; }
                 bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;
