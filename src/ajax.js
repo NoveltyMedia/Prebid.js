@@ -46,7 +46,6 @@ export function ajax(url, callback, data, options = {}) {
       }
     }
 
-    x.timeout = _timeout;
     if (useXDomainRequest) {
       x = new window.XDomainRequest();
       x.onload = function () {
@@ -83,7 +82,8 @@ export function ajax(url, callback, data, options = {}) {
     }
 
     x.open(method, url);
-
+    x.timeout = _timeout;
+    
     if (!useXDomainRequest) {
       if (options.withCredentials) {
         x.withCredentials = true;
