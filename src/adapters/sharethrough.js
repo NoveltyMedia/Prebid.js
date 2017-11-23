@@ -54,6 +54,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
       const size = bidObj.sizes[0];
       bid.width = size[0];
       bid.height = size[1];
+      bid._res = bidResponse.creatives[0];
       bid.adserverRequestId = bidResponse.adserverRequestId;
       str.placementCodeSet[bidObj.placementCode].adserverRequestId = bidResponse.adserverRequestId;
 
