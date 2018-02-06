@@ -5,7 +5,7 @@ var adloader = require('../adloader');
 var constants = require('../constants.json');
 var ajax = require('../ajax.js');
 var prebidGlobal = require('../prebidGlobal.js');
-var SCRIPT_BASE_URL = 'https://contextual.media.net/prebid-';
+var SCRIPT_BASE_URL = '//contextual.media.net/prebid-';
 
 var MedianetBidAdapter = function MedianetBidAdapter() {
   function getScriptURL(version) {
