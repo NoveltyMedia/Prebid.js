@@ -232,6 +232,9 @@ exports.logError = function (msg, code, exception) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     console[errLogFn](console, errCode + ': ' + msg, exception || '');
   }
+  if (window.deApp && deApp.raiseError) {
+    deApp.raiseError('pbjs', { msg, code, exception });
+  }
 };
 
 exports.createInvisibleIframe = function _createInvisibleIframe() {
