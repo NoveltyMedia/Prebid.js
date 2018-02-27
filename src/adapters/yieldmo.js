@@ -1,5 +1,5 @@
 import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from 'src/bidfactory';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
