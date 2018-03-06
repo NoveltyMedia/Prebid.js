@@ -19,7 +19,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
-    var ymURI = '//ads.yieldmo.com/ads?';
+    var ymURI = '//bid.yieldmo.com/exchange/prebid?';
     var ymCall = document.location.protocol + ymURI;
 
     // Placement specific information
@@ -33,9 +33,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       ymCall = ymCall.substring(0, ymCall.length - 1);
     }
 
-    // @if NODE_ENV='debug'
-    // utils.logMessage('ymCall request built: ' + ymCall);
-    // @endif
+    utils.logMessage('ymCall request built: ' + ymCall);
 
     return ymCall;
   }
@@ -53,6 +51,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
       placement.placement_id = bid.placementCode;
       placement.sizes = bid.sizes;
 
+      if (bid.params && bid.params.placementId) {
+        placement.ym_placement_id = bid.params.placementId;
+      }
+
       placements.push(placement);
     }
 
@@ -67,10 +69,8 @@ var YieldmoAdapter = function YieldmoAdapter() {
     var _s = document.location.protocol === 'https:' ? 1 : 0; // 1 if page is secure
     var description = _getPageDescription();
     var title = document.title || ''; // Value of the title from the publisher's page. 
-    var e = 4; // 0 (COP) or 4 (DFP) for now -- ad server should reject other environments (TODO: validate that it will always be the case)
     var bust = new Date().getTime().toString(); // cache buster
     var scrd = window.devicePixelRatio || 0; // screen pixel density
-    var ae = 0; // prebid adapter version
 
     url = utils.tryAppendQueryString(url, 'callback', '$$PREBID_GLOBAL$$.YMCB');
     url = utils.tryAppendQueryString(url, 'page_url', page_url);
@@ -79,7 +79,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
     url = utils.tryAppendQueryString(url, '_s', _s);
     url = utils.tryAppendQueryString(url, 'scrd', scrd);
     url = utils.tryAppendQueryString(url, 'dnt', dnt);
-    url = utils.tryAppendQueryString(url, 'ae', ae);
     url = utils.tryAppendQueryString(url, 'description', description);
     url = utils.tryAppendQueryString(url, 'title', title);
 
@@ -96,15 +95,16 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
-    if (ymResponses) {
+    if (ymResponses && ymResponses.constructor === Array && ymResponses.length > 0) {
       for (var i = 0; i < ymResponses.length; i++) {
         _registerPlacementBid(ymResponses[i]);
       }
     } else {
-      // no response data
-      // @if NODE_ENV='debug'
+      // If an incorrect response is returned, register error bids for all placements
+      // to prevent Prebid waiting till timeout for response 
+      _registerNoResponseBids();
+
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-      // @endif
     }
   };
 
@@ -123,18 +123,27 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bidmanager.addBidResponse(placementCode, bid);
     } else {
       // no response data
-      // @if NODE_ENV='debug'
       if (bidObj) { utils.logMessage('No prebid response from yieldmo for placementCode: ' + bidObj.placementCode); }
-      // @endif
       bid = bidfactory.createBid(2, bidObj);
       bid.bidderCode = 'yieldmo';
       bidmanager.addBidResponse(placementCode, bid);
     }
   }
 
-  return {
+  function _registerNoResponseBids() {
+    var yieldmoBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bid => bid.bidderCode === 'yieldmo');
+
+    utils._each(yieldmoBidRequests.bids, function (currentBid) {
+      var bid = [];
+      bid = bidfactory.createBid(2, currentBid);
+      bid.bidderCode = 'yieldmo';
+      bidmanager.addBidResponse(currentBid.placementCode, bid);
+    });
+  }
+
+  return Object.assign(this, {
     callBids: _callBids
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new YieldmoAdapter(), 'yieldmo');
