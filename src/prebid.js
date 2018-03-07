@@ -341,9 +341,10 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           // Serve with Confiant or default to regular ad serving
           // Replace CONFIANT_CDN and CONFIANT_ID with your account information
           if (confiantExcludeBidders.includes(bid.bidder) || !confiantWrap(doc, ad, bid.bidder, width + 'x' + height, 'clarium.global.ssl.fastly.net', 'bYRWPXBR55mCY9DZC8P_WPjcajs')) {
-            doc.write(ad);
-            doc.close();
+            
           }
+          doc.write(ad);
+          doc.close();
           setRenderSize(doc, width, height);
         } else if (url) {
           const iframe = utils.createInvisibleIframe();
