@@ -18,6 +18,15 @@ export function setAjaxTimeout(timeout) {
   _timeout = timeout;
 }
 
+var pendingXDR = [];
+
+function removeXDR(xdr) {
+  var index = pendingXDR.indexOf(xdr);
+  if (index > -1) {
+    pendingXDR.splice(index, 1);
+  }
+}
+
 export function ajax(url, callback, data, options = {}) {
   try {
     let x;
@@ -45,19 +54,34 @@ export function ajax(url, callback, data, options = {}) {
         useXDomainRequest = true;
       }
     }
-
     if (useXDomainRequest) {
       x = new window.XDomainRequest();
+    }
+    
+
+    if (method === 'GET' && data) {
+      let urlInfo = parseURL(url);
+      Object.assign(urlInfo.search, data);
+      url = formatURL(urlInfo);
+    }
+
+    x.open(method, url);
+    x.timeout = _timeout;
+    
+    if (useXDomainRequest) {
       x.onload = function () {
         callbacks.success(x.responseText, x);
+        removeXDR(x);
       };
 
       // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
       x.onerror = function () {
         callbacks.error('error', x);
+        removeXDR(x);
       };
       x.ontimeout = function () {
         callbacks.error('timeout', x);
+        removeXDR(x);
       };
       x.onprogress = function() {
         utils.logMessage('xhr onprogress');
@@ -71,18 +95,10 @@ export function ajax(url, callback, data, options = {}) {
           } else {
             callbacks.error(x.statusText, x);
           }
+          removeXDR(x);
         }
       };
     }
-
-    if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
-      Object.assign(urlInfo.search, data);
-      url = formatURL(urlInfo);
-    }
-
-    x.open(method, url);
-    x.timeout = _timeout;
     
     if (!useXDomainRequest) {
       if (options.withCredentials) {
@@ -97,6 +113,7 @@ export function ajax(url, callback, data, options = {}) {
       x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
     }
     x.send(method === 'POST' && data);
+    pendingXDR.push(x);
   } catch (error) {
     utils.logError('xhr construction', error);
   }
