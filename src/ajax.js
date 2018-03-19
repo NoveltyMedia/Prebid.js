@@ -32,13 +32,14 @@ export function ajax(url, callback, data, options = {}) {
     let x;
     let useXDomainRequest = false;
     let method = options.method || (data ? 'POST' : 'GET');
+    let urlInfo = parseURL(url);
 
     let callbacks = typeof callback === 'object' ? callback : {
       success: function() {
         utils.logMessage('xhr success');
       },
       error: function(e) {
-        utils.logError('xhr error', null, e);
+        utils.logError('xhr error', urlInfo.hostname, e);
       }
     };
 
@@ -60,7 +61,6 @@ export function ajax(url, callback, data, options = {}) {
     
 
     if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
       Object.assign(urlInfo.search, data);
       url = formatURL(urlInfo);
     }
