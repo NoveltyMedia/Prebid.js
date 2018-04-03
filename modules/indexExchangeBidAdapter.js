@@ -146,6 +146,9 @@ window.cygnus_index_parse_res = function(response) {
             impBid.dealID = bid.ext.dealid;
           }
           impBid.bid = bid.price;
+          impBid._ext = {
+            _res: bid
+          }
           impBid.slotID = slotID;
           impBid.priceLevel = bid.ext.pricelevel;
           impBid.target = targetPrefix + targetID;
@@ -572,6 +575,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.width = slotObj.width;
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
+              if (typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId]._ext !== 'undefined') {
+                bid._res = _IndexRequestData.targetIDToResp[cpmAndSlotId]._ext._res;
+              }
               if (typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined') {
                 if (typeof _IndexRequestData.targetAggregate['private'][adUnitCode] === 'undefined') { _IndexRequestData.targetAggregate['private'][adUnitCode] = []; }
                 bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;

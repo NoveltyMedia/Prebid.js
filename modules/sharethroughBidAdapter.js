@@ -23,7 +23,7 @@ export const sharethroughAdapterSpec = {
     })
   },
   interpretResponse: ({ body }, req) => {
-    if (!Object.keys(body).length) return [];
+    if (!Object.keys(body).length || !body.creatives || !body.creatives.length) return [];
 
     const creative = body.creatives[0];
 
@@ -32,6 +32,7 @@ export const sharethroughAdapterSpec = {
       width: 0,
       height: 0,
       cpm: creative.cpm,
+      _res: creative,
       creativeId: creative.creative.creative_key,
       deal_id: creative.creative.deal_id,
       currency: 'USD',

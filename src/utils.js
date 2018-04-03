@@ -241,6 +241,8 @@ exports.logError = function () {
     console.error.apply(console, arguments);
   }
   if (window.deApp && deApp.raiseError) {
+    let args = Array.prototype.slice.apply(arguments);
+    let [msg, code, exception] = args; 
     deApp.raiseError('pbjs', { msg, code, exception });
   }
 };
