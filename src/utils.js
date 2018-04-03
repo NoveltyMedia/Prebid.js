@@ -240,6 +240,9 @@ exports.logError = function () {
   if (debugTurnedOn() && hasConsoleError()) {
     console.error.apply(console, arguments);
   }
+  if (window.deApp && deApp.raiseError) {
+    deApp.raiseError('pbjs', { msg, code, exception });
+  }
 };
 
 exports.createInvisibleIframe = function _createInvisibleIframe() {
