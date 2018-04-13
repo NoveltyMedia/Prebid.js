@@ -1,15 +1,22 @@
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
+import { STATUS } from 'src/constants';
 import { config } from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import Adapter from 'src/adapter';
 import * as utils from 'src/utils';
-import {userSync} from 'src/userSync';
+import { userSync } from 'src/userSync';
 import { BANNER, VIDEO } from 'src/mediaTypes';
+import { loadScript } from 'src/adloader';
+import adaptermanager from 'src/adaptermanager';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
 const BIDDER_VERSION = '2.0.0';
 
-export const spec = {
+let callbackIndex = 0;
+
+const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
@@ -22,7 +29,8 @@ export const spec = {
   },
   buildRequests: function(bids) {
     let isIfr = utils.inIframe();
-    let currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+    let currentURL =
+      window.parent !== window ? document.referrer : window.location.href;
     if (bids.length === 0) {
       return;
     }
@@ -32,7 +40,7 @@ export const spec = {
     let videoRequests = [];
     let bannerBids = [];
     let videoBids = [];
-    bids.forEach(function (bid) {
+    bids.forEach(function(bid) {
       if (bid.mediaType === VIDEO) {
         videoBids.push(bid);
       } else {
@@ -45,20 +53,26 @@ export const spec = {
       let delDomain = bannerBids[0].params.delDomain;
       let configuredBc = bannerBids[0].params.bc;
       let bc = configuredBc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`;
-      bannerRequests = [ buildOXRequest(bannerBids, {
-        ju: currentURL,
-        jr: currentURL,
-        ch: document.charSet || document.characterSet,
-        res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
-        ifr: isIfr,
-        tz: new Date().getTimezoneOffset(),
-        tws: getViewportDimensions(isIfr),
-        ef: 'bt%2Cdb',
-        be: 1,
-        bc: bc,
-        nocache: new Date().getTime()
-      },
-      delDomain)];
+      bannerRequests = [
+        buildOXRequest(
+          bannerBids,
+          {
+            ju: currentURL,
+            jr: currentURL,
+            ch: document.charSet || document.characterSet,
+            res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+            ifr: isIfr,
+            tz: new Date().getTimezoneOffset(),
+            tws: getViewportDimensions(isIfr),
+            ef: 'bt%2Cdb',
+            be: 1,
+            bc: bc,
+            nocache: new Date().getTime(),
+            callback: '$$PREBID_GLOBAL$$.handleOxResponse',
+          },
+          delDomain
+        ),
+      ];
     }
     // build video requests
     if (videoBids.length !== 0) {
@@ -68,7 +82,7 @@ export const spec = {
     requests = bannerRequests.concat(videoRequests);
     return requests;
   },
-  interpretResponse: function({body: oxResponseObj}, bidRequest) {
+  interpretResponse: function({ body: oxResponseObj }, bidRequest) {
     let bidResponses = [];
     let mediaType = BANNER;
     if (bidRequest && bidRequest.payload) {
@@ -96,10 +110,11 @@ export const spec = {
     }
     bidResponses = createBidResponses(adUnits, bidRequest.payload);
     return bidResponses;
-  }
+  },
 };
+$$PREBID_GLOBAL$$.handleOxResponse = {};
 
-function createBidResponses(adUnits, {bids, startTime}) {
+function createBidResponses(adUnits, { bids, startTime }) {
   let bidResponses = [];
   let shouldSendBoPixel = bids[0].params.sendBoPixel;
   if (shouldSendBoPixel === undefined) {
@@ -112,12 +127,20 @@ function createBidResponses(adUnits, {bids, startTime}) {
     if (adUnits.length == bids.length) {
       // request and response length match, directly assign the request id based on positioning
       bidResponse.requestId = bids[i].bidId;
+      bidResponse.adUnitCode = bids[i].placementCode;
+      bidResponse.bidderCode = BIDDER_CODE;
     } else {
       for (let j = i; j < bids.length; j++) {
         let bid = bids[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !bid.matched) {
-        // ad unit and size match, this is the correct bid response to bid
+        if (
+          String(bid.params.unit) === String(adUnit.adunitid) &&
+          adUnitHasValidSizeFromBid(adUnit, bid) &&
+          !bid.matched
+        ) {
+          // ad unit and size match, this is the correct bid response to bid
+          bidResponse.adUnitCode = bid.adUnitCode;
           bidResponse.requestId = bid.bidId;
+          bidResponse.bidderCode = BIDDER_CODE;
           bid.matched = true;
           break;
         }
@@ -157,10 +180,10 @@ function createBidResponses(adUnits, {bids, startTime}) {
       bt = Math.min(window.PREBID_TIMEOUT, bt);
     }
     let beaconParams = {
-      bd: +(new Date()) - startTime,
+      bd: +new Date() - startTime,
       br: '0', // may be 0, t, or p
       bt: bt,
-      bs: window.location.hostname
+      bs: window.location.hostname,
     };
 
     beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
@@ -195,7 +218,8 @@ function buildQueryStringFromParams(params) {
       }
     }
   }
-  return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
+  return utils
+    ._map(Object.keys(params), key => `${key}=${params[key]}`)
     .join('&');
 }
 
@@ -256,7 +280,9 @@ function formatCustomParms(customKey, customParams) {
     value = value.join(',');
   }
   // return customKey=customValue format, escaping + to . and / to _
-  return (customKey.toLowerCase() + '=' + value.toLowerCase()).replace('+', '.').replace('/', '_')
+  return (customKey.toLowerCase() + '=' + value.toLowerCase())
+    .replace('+', '.')
+    .replace('/', '_');
 }
 
 function buildOXRequest(bids, oxParams, delDomain) {
@@ -266,15 +292,20 @@ function buildOXRequest(bids, oxParams, delDomain) {
 
   oxParams.auid = utils._map(bids, bid => bid.params.unit).join(',');
   oxParams.dddid = utils._map(bids, bid => bid.transactionId).join(',');
-  oxParams.aus = utils._map(bids, bid => {
-    return utils.parseSizesInput(bid.sizes).join(',');
-  }).join('|');
+  oxParams.aus = utils
+    ._map(bids, bid => {
+      return utils.parseSizesInput(bid.sizes).join(',');
+    })
+    .join('|');
 
   let customParamsForAllBids = [];
   let hasCustomParam = false;
-  bids.forEach(function (bid) {
+  bids.forEach(function(bid) {
     if (bid.params.customParams) {
-      let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
+      let customParamsForBid = utils._map(
+        Object.keys(bid.params.customParams),
+        customKey => formatCustomParms(customKey, bid.params.customParams)
+      );
       let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
       hasCustomParam = true;
       customParamsForAllBids.push(formattedCustomParams);
@@ -288,7 +319,7 @@ function buildOXRequest(bids, oxParams, delDomain) {
 
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
-  bids.forEach(function (bid) {
+  bids.forEach(function(bid) {
     if (bid.params.customFloor) {
       customFloorsForAllBids.push(bid.params.customFloor * 1000);
       hasCustomFloor = true;
@@ -301,11 +332,27 @@ function buildOXRequest(bids, oxParams, delDomain) {
   }
 
   let url = `//${delDomain}/w/1.0/arj`;
+  let requestIndex = ++callbackIndex;
+  oxParams.callback += '.f' + requestIndex;
   return {
     method: 'GET',
     url: url,
+    requestId: requestIndex,
     data: oxParams,
-    payload: {'bids': bids, 'startTime': new Date()}
+    payload: { bids: bids, startTime: new Date() },
+  };
+}
+
+function createCallback(id) {
+  $$PREBID_GLOBAL$$.handleOxResponse['f' + id] = function(response) {
+    let bidResponses = spec.interpretResponse(
+      { body: response },
+      requestsInFlight[id]
+    );
+    bidResponses.forEach(br => {
+      let bid = Object.assign(bidfactory.createBid(STATUS.GOOD, requestsInFlight[id]), br);
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+    });
   };
 }
 
@@ -313,11 +360,17 @@ function buildOXVideoRequest(bids) {
   return bids.map(function(bid) {
     let url = 'http://' + bid.params.delDomain + '/v/1.0/avjp';
     let oxVideoParams = generateVideoParameters(bid);
+
+    let requestIndex = ++callbackIndex;
+    oxVideoParams.callback =
+      '$$PREBID_GLOBAL$$.handleOxResponse.f' + requestIndex;
+
     return {
       method: 'GET',
+      requestId: requestIndex,
       url: url,
       data: oxVideoParams,
-      payload: {'bid': bid, 'startTime': new Date()}
+      payload: { bid: bid, startTime: new Date() },
     };
   });
 }
@@ -337,10 +390,14 @@ function generateVideoParameters(bid) {
   return oxVideoParams;
 }
 
-function createVideoBidResponses(response, {bid, startTime}) {
+function createVideoBidResponses(response, { bid, startTime }) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
+  if (
+    response !== undefined &&
+    response.vastUrl !== '' &&
+    response.pub_rev !== ''
+  ) {
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     bidResponse.bidderCode = BIDDER_CODE;
@@ -362,4 +419,29 @@ function createVideoBidResponses(response, {bid, startTime}) {
   return bidResponses;
 }
 
-registerBidder(spec);
+let requestsInFlight = {};
+
+const OpenXAdapter = function OpenXAdapter() {
+  const baseAdapter = new Adapter(BIDDER_CODE);
+  baseAdapter.callBids = function({ bids }) {
+    let requests = spec.buildRequests(bids);
+    requests.forEach(r => {
+      let requestId = r.requestId;
+      let url = r.url + '?' + utils.parseQueryStringParameters(r.data || {});
+      requestsInFlight[requestId] = r;
+      createCallback(requestId);
+      loadScript(url);
+    });
+  };
+
+  return Object.assign(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
+  });
+};
+
+adaptermanager.registerBidAdapter(new OpenXAdapter(), BIDDER_CODE, {
+  supportedMediaTypes: [VIDEO, BANNER],
+});
+
+module.exports = OpenXAdapter;
