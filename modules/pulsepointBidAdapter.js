@@ -67,6 +67,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
       bid.ad = bidResponse.html;
       bid.width = adSize[0];
       bid.height = adSize[1];
+      bid._res = bidResponse;
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     } else {
       var passback = bidfactory.createBid(2, bidRequest);

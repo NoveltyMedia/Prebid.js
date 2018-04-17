@@ -95,7 +95,8 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         adId: id,
         ttl: DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: DEFAULT_CURRENCY
+        currency: DEFAULT_CURRENCY,
+        _res: idToBidMap[id],
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);

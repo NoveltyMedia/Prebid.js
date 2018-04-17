@@ -341,7 +341,11 @@ export const spec = {
       currency: response.cur,
       dealId: bidData.dealid,
       netRevenue: true,
-      ttl: bidRequest.ttl
+      ttl: bidRequest.ttl,
+      _res: {
+        bidData,
+        response
+      },
     };
   },
   getUserSyncs: function(options, bidResponses) {

@@ -185,7 +185,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.width = jptResponseObj.result.width;
         bid.height = jptResponseObj.result.height;
         bid.dealId = jptResponseObj.result.deal_id;
-
+        bid._res = jptResponseObj.result;
         bidmanager.addBidResponse(placementCode, bid);
       } else {
         // no response data

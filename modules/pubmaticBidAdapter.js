@@ -212,6 +212,11 @@ const PubmaticAdapter = function PubmaticAdapter() {
         adResponse.height = adUnit.height;
         adResponse.dealId = adUnitInfo.wdeal;
         adResponse.dealChannel = dealChannelValues[adUnit.deal_channel] || null;
+        adResponse._res = {
+          bid,
+          adUnit,
+          adUnitInfo
+        };
 
         bidmanager.addBidResponse(bids[i].placementCode, adResponse);
       } else {

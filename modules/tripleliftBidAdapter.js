@@ -106,6 +106,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.width = tlResponseObj.width;
         bid.height = tlResponseObj.height;
         bid.dealId = tlResponseObj.deal_id;
+        bid._res = tlResponseObj;
         bidmanager.addBidResponse(placementCode, bid);
       } else {
         // no response data

@@ -90,6 +90,7 @@ var SonobiAdapter = function SonobiAdapter() {
     goodBid.cpm = Number(bid.sbi_mouse);
     goodBid.width = Number(bid.sbi_size.split('x')[0]) || 1;
     goodBid.height = Number(bid.sbi_size.split('x')[1]) || 1;
+    goodBid._res = bid;
     bidmanager.addBidResponse(placementCode, goodBid);
   }
 

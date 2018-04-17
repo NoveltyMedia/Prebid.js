@@ -153,7 +153,8 @@ const GumgumAdapter = function GumgumAdapter() {
         ad: gumgumAdLoader,
         width: ad.width,
         height: ad.height,
-        bidderCode: BIDDER_CODE
+        bidderCode: BIDDER_CODE,
+        _res: bidResponse
       });
       bidmanager.addBidResponse(cachedBidRequest.placementCode, bid);
     } else {

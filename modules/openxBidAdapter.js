@@ -112,12 +112,14 @@ function createBidResponses(adUnits, {bids, startTime}) {
     if (adUnits.length == bids.length) {
       // request and response length match, directly assign the request id based on positioning
       bidResponse.requestId = bids[i].bidId;
+      bidResponse._res = bids[i];
     } else {
       for (let j = i; j < bids.length; j++) {
         let bid = bids[j];
         if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !bid.matched) {
         // ad unit and size match, this is the correct bid response to bid
           bidResponse.requestId = bid.bidId;
+          bidResponse._res = bid;
           bid.matched = true;
           break;
         }

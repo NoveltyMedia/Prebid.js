@@ -146,6 +146,7 @@ var CriteoAdapter = function CriteoAdapter() {
       bidObject = bidfactory.createBid(1);
       bidObject.bidderCode = _bidderCode;
       bidObject.cpm = bidResponse.cpm;
+      bidObject._res = bidResponse;
 
       // in case of native
       if (slot.nativeCallback && bidResponse['native']) {

@@ -189,7 +189,10 @@ function newBid(serverBid, rtbBid) {
       buyerMemberId: rtbBid.buyer_member_id
     }
   };
-
+  bid._res = {
+    serverBid,
+    rtbBid
+  };
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
