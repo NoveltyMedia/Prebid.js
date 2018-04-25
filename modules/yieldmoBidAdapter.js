@@ -120,6 +120,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bid.ad = response.ad;
       bid.width = response.width;
       bid.height = response.height;
+      bid._res = response;
       bidmanager.addBidResponse(placementCode, bid);
     } else {
       // no response data
