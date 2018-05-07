@@ -28,11 +28,12 @@ function removeXDR(xdr) {
 }
 
 export function ajax(url, callback, data, options = {}) {
+  let urlInfo;
   try {
     let x;
     let useXDomainRequest = false;
     let method = options.method || (data ? 'POST' : 'GET');
-    let urlInfo = parseURL(url);
+    urlInfo = parseURL(url);
 
     let callbacks = typeof callback === 'object' ? callback : {
       success: function() {
@@ -122,6 +123,6 @@ export function ajax(url, callback, data, options = {}) {
     x.send(method === 'POST' && data);
     pendingXDR.push(x);
   } catch (error) {
-    utils.logError('xhr construction', error);
+    utils.logError('xhr construction', urlInfo && urlInfo.hostname, error);
   }
 }
