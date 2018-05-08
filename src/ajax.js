@@ -120,7 +120,17 @@ export function ajax(url, callback, data, options = {}) {
       }
       x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
     }
-    x.send(method === 'POST' && data);
+    let ua = window.navigator && window.navigator.userAgent || '';
+    if (method === 'POST' && data && /msie|trident/i.test(ua) && window.deApp && window.deApp.opts && window.deApp.opts.ab_segment === '8') {
+      let stringified = data;
+      if (typeof stringified === 'object') {
+        stringified = JSON.stringify(stringified);
+      }
+      x.send(stringified);
+    }
+    else {
+      x.send(method === 'POST' && data);
+    }
     pendingXDR.push(x);
   } catch (error) {
     utils.logError('xhr construction', urlInfo && urlInfo.hostname, error);
