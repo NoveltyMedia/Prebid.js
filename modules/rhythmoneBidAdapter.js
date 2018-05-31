@@ -183,6 +183,12 @@ function RhythmOneBidAdapter() {
         netRevenue: true,
         ttl: 1000
       };
+      bidResponse._res = {
+        crid: bid.crid,
+        cid: bid.cid,
+        adomain: bid.adomain,
+        buyer: responses.seatbid[i].seat
+      }
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
