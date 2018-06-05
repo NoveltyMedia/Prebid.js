@@ -163,6 +163,7 @@ function RhythmOneBidAdapter() {
       let temp = [];
       for (i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
+          responses.seatbid[i].bid[j].buyer = responses.seatbid[i].seat
           temp.push(responses.seatbid[i].bid[j]);
         }
       }
@@ -186,8 +187,8 @@ function RhythmOneBidAdapter() {
       bidResponse._res = {
         crid: bid.crid,
         cid: bid.cid,
-        adomain: bid.adomain,
-        buyer: responses.seatbid[i].seat
+        adomain: bid.adomain[0],
+        buyer: bid.buyer
       }
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
