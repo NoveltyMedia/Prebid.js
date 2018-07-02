@@ -74,11 +74,18 @@ function CoxAdapter() {
       var data = placementMap[adZoneKey];
 
       if (bid > 0) {
-        bidObj = bidfactory.createBid(1);
+        let res = {};
+        res.data = data;
+        res.bid = bid;
+        res.ad = W.CMT.Service.getAd(adZoneKey);
+        res.bidObj = bidfactory.createBid(1);
+
+        bidObj = res.bidObj;
         bidObj.cpm = bid;
-        bidObj.ad = W.CMT.Service.getAd(adZoneKey);
+        bidObj.ad = res.ad;
         bidObj.width = data.w;
         bidObj.height = data.h;
+        bidObj._res = res;
         // bidObj.floor = W.CMT.Service.getSecondPrice(adZoneKey);
         // bidObj.finalizeAd = finalizeAd;
       } else {
